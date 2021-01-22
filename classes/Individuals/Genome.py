@@ -25,12 +25,24 @@ class Genome:
             self.mutate_weight_reassign()
 
     def mutate_add_node(self):
-        if len(self.connections) == 0: return
+        if len(self.connections) == 0:
+            return
 
-        conn: Connection = random.choice(self.connections)
+        conn = None
+        for i in range(100):
+            conn = random.choice(self.connections)
+            if not conn.is_enabled:  # Prevent nodes from being created on disabled links
+                conn = None
+                continue
+
+            break
+
+        if conn is None:
+            return
+
         conn.is_enabled = False
         x = (conn.to_node.x + conn.from_node.x) / 2
-        y = ((conn.to_node.y + conn.from_node.y) / 2) * random.uniform(0.9, 1.1)  # Perturb the Y for better drawing
+        y = ((conn.to_node.y + conn.from_node.y) / 2) * random.uniform(0.6, 1.4)  # Perturb the Y for better drawing
 
         node: Node = self.innovation_guardian.attempt_create_empty_node(conn.innovation_number, x, y)
         conn_a: Connection = self.innovation_guardian.attempt_create_empty_connection(conn.from_node, node)
@@ -50,13 +62,14 @@ class Genome:
         conn.to_node.connections.append(conn_b)
 
         self.connections += [conn_a, conn_b]
+        self.nodes.append(node)
 
         self.connection_dict[(conn.from_node.innovation_number, node.innovation_number)] = conn_a
         self.connection_dict[(node.innovation_number, conn.to_node.innovation_number)] = conn_b
 
         # Insert the new node into this genome in a sorted fashion, for faster computation in the future
         for idx, n in enumerate(self.nodes):
-            if n.x <= node.x <= self.nodes[idx + 1]:
+            if n.x <= node.x <= self.nodes[idx + 1].x:
                 self.nodes.insert(idx + 1, node)
                 break
 
@@ -70,9 +83,11 @@ class Genome:
             node_b = random.choice(self.nodes)
 
             if node_a == node_b \
-                    or self.connection_dict.get((node_a, node_b)) is not None \
-                    or self.connection_dict.get((node_b, node_a)) is not None \
+                    or self.connection_dict.get((node_a.innovation_number, node_b.innovation_number)) is not None \
+                    or self.connection_dict.get((node_b.innovation_number, node_a.innovation_number)) is not None \
                     or node_a.x == node_b.x:  # Prevent connections amongst sensors and output nodes
+                node_a = None
+                node_b = None
                 continue
 
             break
@@ -101,7 +116,8 @@ class Genome:
 
     def mutate_toggle_link(self):
         # Randomly turns a connection on or off
-        random.choice(self.connections).is_enabled = not random.choice(self.connections).is_enabled
+        conn = random.choice(self.connections)
+        conn.is_enabled = not conn.is_enabled
 
     def mutate_weight_shift(self):
         # Nudges a connection's weight slightly in a random direction
