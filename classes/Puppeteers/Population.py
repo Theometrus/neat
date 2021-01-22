@@ -27,7 +27,6 @@ class Population:
         self.speciate()
         self.erase_extinct_species()
         self.calculate_fitnesses()
-        self.cull()
         self.crossover()
         self.mutate()
 
@@ -43,15 +42,7 @@ class Population:
     def calculate_fitnesses(self):
         # Calculate the mean adjusted fitnesses based on the specifications described in the original NEAT paper
         for i in self.species:
-            for j in i.members:
-                j.fitness = self.fitness_evaluator.evaluate(j) / len(i.members)
-                i.fitness += j.fitness
-            sum_fitnesses = i.fitness
-            i.fitness /= len(i.members)
-            i.new_size = round(sum_fitnesses / i.fitness)
-
-    def cull(self):
-        pass
+            i.calculate_fitnesses()
 
     def crossover(self):
         pass

@@ -12,6 +12,8 @@ class Node:
         self.output = 0.0
         self.activation_fn = activation_fn
 
+    # TODO: Figure out how to pass inputs to input nodes.
+    # Note the issue of 'how do the inputs know which input belongs to them (in an array)? Maybe there's another way'
     def calculate(self):
         for link in self.in_links:
             self.output += link.weight * link.from_node.output
