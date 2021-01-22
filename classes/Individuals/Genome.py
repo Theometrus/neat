@@ -64,19 +64,13 @@ class Genome:
 
         node.in_links.append(conn_a)
         node.out_links.append(conn_b)
-        node.connections += [conn_a, conn_b]
 
         conn.from_node.out_links.append(conn_a)
-        conn.from_node.connections.append(conn_a)
-
         conn.to_node.in_links.append(conn_b)
-        conn.to_node.connections.append(conn_b)
 
-        self.connections += [conn_a, conn_b]
+        self.insert_connection(conn_a)
+        self.insert_connection(conn_b)
         self.nodes.append(node)
-
-        self.connection_dict[(conn.from_node.innovation_number, node.innovation_number)] = conn_a
-        self.connection_dict[(node.innovation_number, conn.to_node.innovation_number)] = conn_b
 
         # Insert the new node into this genome in a sorted fashion, for faster computation in the future
         for idx, n in enumerate(self.nodes):
@@ -116,6 +110,17 @@ class Genome:
 
         conn.weight = random.uniform(-3.0, 3.0)
 
+        self.insert_connection(conn)
+        node_a.out_links.append(conn)
+        node_b.in_links.append(conn)
+
+    def insert_connection(self, conn):
+        # Ensures connections are inserted in a sorted order
+        if len(self.connections) == 0:
+            self.connections.append(conn)
+            self.connection_dict[(conn.from_node.innovation_number, conn.to_node.innovation_number)] = conn
+            return
+
         for idx, c in enumerate(self.connections):
             if idx + 1 >= len(self.connections):
                 self.connections.append(conn)
@@ -125,21 +130,23 @@ class Genome:
                 self.connections.insert(idx + 1, conn)
                 break
 
-        self.connection_dict[(node_a.innovation_number, node_b.innovation_number)] = conn
-
-        node_a.out_links.append(conn)
-        node_a.connections.append(conn)
-
-        node_b.in_links.append(conn)
-        node_b.connections.append(conn)
+        self.connection_dict[(conn.from_node.innovation_number, conn.to_node.innovation_number)] = conn
 
     def mutate_toggle_link(self):
         # Randomly turns a connection on or off
+        if len(self.connections) == 0:
+            return
+
         conn = random.choice(self.connections)
-        conn.is_enabled = not conn.is_enabled
+
+        if conn is not None:
+            conn.is_enabled = not conn.is_enabled
 
     def mutate_weight_shift(self):
         # Nudges a connection's weight slightly in a random direction
+        if len(self.connections) == 0:
+            return
+
         conn = self.find_enabled_connection()
 
         if conn is not None:
@@ -147,6 +154,9 @@ class Genome:
 
     def mutate_weight_reassign(self):
         # Completely randomizes a connection's weight
+        if len(self.connections) == 0:
+            return
+
         conn = self.find_enabled_connection()
 
         if conn is not None:
@@ -156,7 +166,6 @@ class Genome:
         idx_a = 0
         idx_b = 0
         disjoint = 0
-        excess = 0
         similar = 0
         weight_diff = 0.0
 
@@ -178,11 +187,87 @@ class Genome:
                 disjoint += 1
                 idx_b += 1
 
-        excess = abs(len(self.connections) - len(genome.connections))
         weight_diff /= similar
+        excess = abs(len(self.connections) - len(genome.connections))
         length = max(len(self.connections), len(genome.connections))
 
         delta = (EXCESS_COEFFICIENT * excess / length) + (
                     DISJOINT_COEFFICIENT * disjoint / length) + WEIGHT_COEFFICIENT * weight_diff
 
         return delta
+
+    def get_child(self, partner):
+        """
+        Gets the offspring of this genome and the partner. This function assumes that the partner has a lower fitness
+        than this genome, which must be kept in mind when using it
+        """
+
+        idx_a = 0
+        idx_b = 0
+        nodes = []
+        node_dict = {}
+        connections = []
+        connection_dict = {}
+
+        while idx_a < len(self.connections) and idx_b < len(partner.connections):
+            innov_a = self.connections[idx_a].innovation_number
+            innov_b = partner.connections[idx_b].innovation_number
+
+            if innov_a == innov_b:
+                if random.uniform(0.0, 1.0) <= 0.5:  # Decide which parent's genes to inherit using a coin flip
+                    connection = self.connections[idx_a]
+
+                else:
+                    connection = partner.connections[idx_b]
+
+                from_node: Node = connection.from_node
+                to_node: Node = connection.to_node
+                weight = connection.weight
+
+                if node_dict.get(from_node.innovation_number) is None:
+                    node_dict[from_node.innovation_number] = from_node.clone()
+                    nodes.append(node_dict[from_node.innovation_number])
+
+                if node_dict.get(to_node.innovation_number) is None:
+                    node_dict[to_node.innovation_number] = to_node.clone()
+                    nodes.append(node_dict[to_node.innovation_number])
+
+                from_node = node_dict[from_node.innovation_number]
+                to_node = node_dict[to_node.innovation_number]
+
+                # Returns an existing connection since we are only copying genes, not making new ones
+                conn = self.innovation_guardian.attempt_create_empty_connection(from_node, to_node)
+                conn.weight = weight
+
+                inserted = False
+                if len(connections) == 0:
+                    connections.append(conn)
+                    connection_dict[(from_node.innovation_number, to_node.innovation_number)] = conn
+                    inserted = True
+
+                if not inserted:
+                    for idx, c in enumerate(connections):
+                        if idx + 1 >= len(connections):
+                            connections.append(conn)
+                            break
+
+                        if c.innovation_number <= conn.innovation_number <= connections[idx + 1].innovation_number:
+                            connections.insert(idx + 1, conn)
+                            break
+
+                    connection_dict[(from_node.innovation_number, to_node.innovation_number)] = conn
+
+                from_node.out_links.append(conn)
+                to_node.in_links.append(conn)
+
+                idx_a += 1
+                idx_b += 1
+
+            elif innov_a < innov_b:
+                from_node: Node = self.connections[idx_a].from_node
+                to_node: Node = self.connections[idx_a].to_node
+
+                idx_a += 1
+
+            else:  # Disjoint genes of the partner are not inherited (assuming the partner has lower fitness)
+                idx_b += 1

@@ -33,9 +33,9 @@ class InnovationGuardian:
             activation_fn = ReLU()
 
         node = Node(innovation_number, x, y, activation_fn)
-        self.nodes[innovation_number] = node
+        self.nodes[innovation_number] = node.clone()
 
-        return node.clone()
+        return node
 
     def attempt_create_empty_connection(self, from_node, to_node):
         from_innovation = from_node.innovation_number
@@ -47,6 +47,6 @@ class InnovationGuardian:
         self.latest_innovation += 1
 
         conn = Connection(from_node, to_node, self.latest_innovation)
-        self.connections[(from_innovation, to_innovation)] = conn
+        self.connections[(from_innovation, to_innovation)] = conn.clone()
 
-        return conn.clone()
+        return conn

@@ -5,7 +5,6 @@ class Node:
         :param y: Y coordinate. Used for drawing
         """
         self.innovation_number = innovation_number
-        self.connections = []
         self.in_links = []
         self.out_links = []
         self.x = x

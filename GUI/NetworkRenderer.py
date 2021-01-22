@@ -97,7 +97,8 @@ def main():
             for j in i.genome.connections:
                 color = (0, 0, 0) if not j.is_enabled else (0, 150, 0)
                 if j.is_enabled:
-                    pg.draw.line(color=color, width=3, start_pos=(j.from_node.x * 700 + 27, j.from_node.y * 60 + 90), end_pos=(j.to_node.x * 700 - 8, j.to_node.y * 60 + 90), surface=screen)
+                    pg.draw.line(color=color, width=3, start_pos=(j.from_node.x * 700 + 27, j.from_node.y * 60 + 90),
+                                 end_pos=(j.to_node.x * 700 - 8, j.to_node.y * 60 + 90), surface=screen)
         pg.display.update()
         pg.time.delay(20)
 
