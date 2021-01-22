@@ -71,7 +71,7 @@ def main():
                 if b3.is_over(mouse):
                     pop.networks[0].genome.mutate_toggle_link()
                 if b4.is_over(mouse):
-                    print("Shift weight")
+                    pop.networks[0].genome.get_child(pop.networks[0].genome, pop.create_empty_genome())
                 if b5.is_over(mouse):
                     print("Reassign weight")
 

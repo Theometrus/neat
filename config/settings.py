@@ -12,7 +12,7 @@ OUT_NODE_X = 0.9
 IN_NODE_X = 0.1
 
 # ========================== Population parameters ========================== #
-POPULATION_SIZE = 1
+POPULATION_SIZE = 2
 EXCESS_COEFFICIENT = 2.0
 DISJOINT_COEFFICIENT = 2.0
 WEIGHT_COEFFICIENT = 1.0

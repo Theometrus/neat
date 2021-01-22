@@ -196,7 +196,7 @@ class Genome:
 
         return delta
 
-    def get_child(self, partner):
+    def get_child(self, partner, template):
         """
         Gets the offspring of this genome and the partner. This function assumes that the partner has a lower fitness
         than this genome, which must be kept in mind when using it
@@ -204,14 +204,28 @@ class Genome:
 
         idx_a = 0
         idx_b = 0
-        nodes = []
+        nodes = template.nodes
         node_dict = {}
         connections = []
         connection_dict = {}
 
-        while idx_a < len(self.connections) and idx_b < len(partner.connections):
-            innov_a = self.connections[idx_a].innovation_number
-            innov_b = partner.connections[idx_b].innovation_number
+        # Register existing nodes from the template (sensors and output nodes)
+        for i in template.nodes:
+            node_dict[i.innovation_number] = i
+
+        while idx_a < len(self.connections) or idx_b < len(partner.connections):
+            # B is initially set to infinity to control the flow of the loop down the line
+            innov_b = float('inf')
+
+            if idx_a < len(self.connections):
+                innov_a = self.connections[idx_a].innovation_number
+
+            # Since the partner has a lower fitness, we don't want the offspring to inherit their excess genes
+            else:
+                break
+
+            if idx_b < len(partner.connections):
+                innov_b = partner.connections[idx_b].innovation_number
 
             if innov_a == innov_b:
                 if random.uniform(0.0, 1.0) <= 0.5:  # Decide which parent's genes to inherit using a coin flip
@@ -220,54 +234,59 @@ class Genome:
                 else:
                     connection = partner.connections[idx_b]
 
-                from_node: Node = connection.from_node
-                to_node: Node = connection.to_node
-                weight = connection.weight
-
-                if node_dict.get(from_node.innovation_number) is None:
-                    node_dict[from_node.innovation_number] = from_node.clone()
-                    nodes.append(node_dict[from_node.innovation_number])
-
-                if node_dict.get(to_node.innovation_number) is None:
-                    node_dict[to_node.innovation_number] = to_node.clone()
-                    nodes.append(node_dict[to_node.innovation_number])
-
-                from_node = node_dict[from_node.innovation_number]
-                to_node = node_dict[to_node.innovation_number]
-
-                # Returns an existing connection since we are only copying genes, not making new ones
-                conn = self.innovation_guardian.attempt_create_empty_connection(from_node, to_node)
-                conn.weight = weight
-
-                inserted = False
-                if len(connections) == 0:
-                    connections.append(conn)
-                    connection_dict[(from_node.innovation_number, to_node.innovation_number)] = conn
-                    inserted = True
-
-                if not inserted:
-                    for idx, c in enumerate(connections):
-                        if idx + 1 >= len(connections):
-                            connections.append(conn)
-                            break
-
-                        if c.innovation_number <= conn.innovation_number <= connections[idx + 1].innovation_number:
-                            connections.insert(idx + 1, conn)
-                            break
-
-                    connection_dict[(from_node.innovation_number, to_node.innovation_number)] = conn
-
-                from_node.out_links.append(conn)
-                to_node.in_links.append(conn)
-
                 idx_a += 1
                 idx_b += 1
 
             elif innov_a < innov_b:
-                from_node: Node = self.connections[idx_a].from_node
-                to_node: Node = self.connections[idx_a].to_node
-
                 idx_a += 1
+                connection = self.connections[idx_a]
 
             else:  # Disjoint genes of the partner are not inherited (assuming the partner has lower fitness)
                 idx_b += 1
+                continue
+
+            from_node: Node = connection.from_node
+            to_node: Node = connection.to_node
+            weight = connection.weight
+            is_enabled = connection.is_enabled
+
+            if node_dict.get(from_node.innovation_number) is None:
+                node_dict[from_node.innovation_number] = from_node.clone()
+                nodes.append(node_dict[from_node.innovation_number])
+
+            if node_dict.get(to_node.innovation_number) is None:
+                node_dict[to_node.innovation_number] = to_node.clone()
+                nodes.append(node_dict[to_node.innovation_number])
+
+            from_node = node_dict[from_node.innovation_number]
+            to_node = node_dict[to_node.innovation_number]
+
+            # Returns an existing connection since we are only copying genes, not making new ones
+            conn = self.innovation_guardian.attempt_create_empty_connection(from_node, to_node)
+            conn.weight = weight
+            conn.is_enabled = is_enabled
+
+            inserted = False
+            if len(connections) == 0:
+                connections.append(conn)
+                connection_dict[(from_node.innovation_number, to_node.innovation_number)] = conn
+                inserted = True
+
+            if not inserted:
+                for idx, c in enumerate(connections):
+                    if idx + 1 >= len(connections):
+                        connections.append(conn)
+                        break
+
+                    if c.innovation_number <= conn.innovation_number <= connections[idx + 1].innovation_number:
+                        connections.insert(idx + 1, conn)
+                        break
+
+                connection_dict[(from_node.innovation_number, to_node.innovation_number)] = conn
+
+            from_node.out_links.append(conn)
+            to_node.in_links.append(conn)
+
+        template.connections = connections
+        template.connection_dict = connection_dict
+        return template
