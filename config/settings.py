@@ -13,6 +13,10 @@ IN_NODE_X = 0.1
 
 # ========================== Population parameters ========================== #
 POPULATION_SIZE = 1
+EXCESS_COEFFICIENT = 2.0
+DISJOINT_COEFFICIENT = 2.0
+WEIGHT_COEFFICIENT = 1.0
+DELTA_THRESHOLD = 5
 
 # ========================= General configurations ========================== #
 RESOLUTION = [720, 480]

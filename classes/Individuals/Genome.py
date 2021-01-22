@@ -8,7 +8,7 @@ from config.settings import *
 class Genome:
     def __init__(self, nodes, innovation_guardian):
         self.nodes = nodes  # Note: Must be sorted by X value for more efficient computation in the future
-        self.connections = []
+        self.connections = []  # Note: Must be sorted by innovation number for faster comparisons
         self.connection_dict = {}  # Used for quickly checking if a given connection already exists in this genome
         self.innovation_guardian = innovation_guardian
 
@@ -116,7 +116,15 @@ class Genome:
 
         conn.weight = random.uniform(-3.0, 3.0)
 
-        self.connections.append(conn)
+        for idx, c in enumerate(self.connections):
+            if idx + 1 >= len(self.connections):
+                self.connections.append(conn)
+                break
+
+            if c.innovation_number <= conn.innovation_number <= self.connections[idx + 1].innovation_number:
+                self.connections.insert(idx + 1, conn)
+                break
+
         self.connection_dict[(node_a.innovation_number, node_b.innovation_number)] = conn
 
         node_a.out_links.append(conn)
@@ -143,3 +151,38 @@ class Genome:
 
         if conn is not None:
             conn.weight = random.uniform(-3.0, 3.0)
+
+    def compare_to(self, genome):
+        idx_a = 0
+        idx_b = 0
+        disjoint = 0
+        excess = 0
+        similar = 0
+        weight_diff = 0.0
+
+        while idx_a <= len(self.connections) and idx_b <= len(genome.connections):
+            innov_a = self.connections[idx_a].innovation_number
+            innov_b = genome.connections[idx_b].innovation_number
+
+            if innov_a == innov_b:
+                similar += 1
+                idx_a += 1
+                idx_b += 1
+                weight_diff += abs(self.connections[idx_a] - genome.connections[idx_b])
+
+            elif innov_a < innov_b:
+                disjoint += 1
+                idx_a += 1
+
+            else:
+                disjoint += 1
+                idx_b += 1
+
+        excess = abs(len(self.connections) - len(genome.connections))
+        weight_diff /= similar
+        length = max(len(self.connections), len(genome.connections))
+
+        delta = (EXCESS_COEFFICIENT * excess / length) + (
+                    DISJOINT_COEFFICIENT * disjoint / length) + WEIGHT_COEFFICIENT * weight_diff
+
+        return delta

@@ -17,4 +17,4 @@ class Network:
         self.genome.mutate()
 
     def compare_to(self, network):
-        return self.genome.compare_to(network)
+        return self.genome.compare_to(network.genome)
