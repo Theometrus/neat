@@ -5,18 +5,17 @@ from config.settings import INPUT_NODES, OUTPUT_NODES, IN_NODE_X, OUT_NODE_X, PO
 
 
 class Population:
-    def __init__(self):
+    def __init__(self, fitness_evaluator):
         # Note: fresh networks are created with no connections whatsoever. Connections must be mutated into
         self.networks = []
         self.species = []
+        self.fitness_evaluator = fitness_evaluator
         self.innovation_guard = InnovationGuardian()
 
-        # Template nodes for new networks to copy from
         self.initial_nodes = []
-        self.make_starting_nodes()
-        self.make_starting_networks()
+        self.make_starting_nodes()  # Template nodes for new networks to copy from
+        self.make_starting_networks()  # Initial population members
 
-    # TODO CONSIDER THE BELOW TWO FUNCTIONS. How will fitness / propagation be abstracted from the user?
     def propagate(self, inputs):
         outputs = []
         for i in self.networks:
@@ -24,17 +23,13 @@ class Population:
 
         return outputs
 
-    def set_fitness(self, idx, fitness):
-        self.networks[idx].fitness = fitness
-
     def evolve(self):
         self.speciate()
         self.erase_extinct_species()
-        self.calculate_fitness()
+        self.calculate_fitnesses()
         self.cull()
         self.crossover()
         self.mutate()
-        pass
 
     def speciate(self):
         pass
@@ -45,8 +40,15 @@ class Population:
             if len(species.members) == 0:
                 self.species.remove(species)
 
-    def calculate_fitness(self):
-        pass
+    def calculate_fitnesses(self):
+        # Calculate the mean adjusted fitnesses based on the specifications described in the original NEAT paper
+        for i in self.species:
+            for j in i.members:
+                j.fitness = self.fitness_evaluator.evaluate(j) / len(i.members)
+                i.fitness += j.fitness
+            sum_fitnesses = i.fitness
+            i.fitness /= len(i.members)
+            i.new_size = round(sum_fitnesses / i.fitness)
 
     def cull(self):
         pass
@@ -63,7 +65,7 @@ class Population:
         for node in self.initial_nodes:
             nodes_clone.append(node.clone())
 
-        return Genome(nodes_clone)
+        return Genome(nodes_clone, self.innovation_guard)
 
     def make_starting_nodes(self):
         for i in range(INPUT_NODES):
@@ -79,3 +81,5 @@ class Population:
             genome = self.create_empty_genome()
             network = Network(genome)
             self.networks.append(network)
+
+
