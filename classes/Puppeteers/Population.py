@@ -57,7 +57,8 @@ class Population:
         pass
 
     def mutate(self):
-        pass
+        for i in self.networks:
+            i.mutate()
 
     def create_empty_genome(self):
         nodes_clone = []
@@ -81,5 +82,3 @@ class Population:
             genome = self.create_empty_genome()
             network = Network(genome)
             self.networks.append(network)
-
-

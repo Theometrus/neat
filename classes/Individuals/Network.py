@@ -12,3 +12,9 @@ class Network:
 
     def calculate(self, inputs):
         pass
+
+    def mutate(self):
+        self.genome.mutate()
+
+    def compare_to(self, network):
+        return self.genome.compare_to(network)

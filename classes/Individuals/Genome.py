@@ -12,6 +12,24 @@ class Genome:
         self.connection_dict = {}  # Used for quickly checking if a given connection already exists in this genome
         self.innovation_guardian = innovation_guardian
 
+    def find_enabled_connection(self):
+        found = False
+        conn = None
+
+        # Will try to find a connection before timing out
+        for i in range(100):
+            conn = random.choice(self.connections)
+            if not conn.is_enabled:  # Prevent nodes from being created on disabled links
+                continue
+
+            found = True
+            break
+
+        if not found:
+            return None
+
+        return conn
+
     def mutate(self):
         if random.uniform(0.0, 1.0) <= MUT_ADD_NODE:
             self.mutate_add_node()
@@ -28,14 +46,7 @@ class Genome:
         if len(self.connections) == 0:
             return
 
-        conn = None
-        for i in range(100):
-            conn = random.choice(self.connections)
-            if not conn.is_enabled:  # Prevent nodes from being created on disabled links
-                conn = None
-                continue
-
-            break
+        conn = self.find_enabled_connection()
 
         if conn is None:
             return
@@ -76,6 +87,7 @@ class Genome:
     def mutate_add_link(self):
         node_a = None
         node_b = None
+        found = False
 
         # Keep trying to find two nodes without a connection between them
         for i in range(100):
@@ -86,13 +98,12 @@ class Genome:
                     or self.connection_dict.get((node_a.innovation_number, node_b.innovation_number)) is not None \
                     or self.connection_dict.get((node_b.innovation_number, node_a.innovation_number)) is not None \
                     or node_a.x == node_b.x:  # Prevent connections amongst sensors and output nodes
-                node_a = None
-                node_b = None
                 continue
 
+            found = True
             break
 
-        if node_a is None or node_b is None:
+        if not found:
             return
 
         # Connections are only created from a lower to a higher X to prevent cycles and assist in calculation sequencing
@@ -121,10 +132,14 @@ class Genome:
 
     def mutate_weight_shift(self):
         # Nudges a connection's weight slightly in a random direction
-        conn = random.choice(self.connections)
-        conn.weight += random.uniform(-2.0, 2.0)
+        conn = self.find_enabled_connection()
+
+        if conn is not None:
+            conn.weight += random.uniform(-2.0, 2.0)
 
     def mutate_weight_reassign(self):
         # Completely randomizes a connection's weight
-        conn = random.choice(self.connections)
-        conn.weight = random.uniform(-3.0, 3.0)
+        conn = self.find_enabled_connection()
+
+        if conn is not None:
+            conn.weight = random.uniform(-3.0, 3.0)
