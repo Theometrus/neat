@@ -43,7 +43,7 @@ def main():
         print("GENERATION " + str(gen))
         mean_score = 0.0
         for s in pop.species:
-            print(str(len(s.members)) + " -- " + str(s.fitness))
+            print(str(len(s.members)))
             print("************")
         # mean_score /= 1000
         for n, v in xor.networks.items():

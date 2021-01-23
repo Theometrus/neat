@@ -30,6 +30,7 @@ class Population:
     def evolve(self):
         self.speciate()
         self.calculate_fitnesses()
+        self.adjust_species_sizes()
         self.cull()
         self.erase_extinct_species()
         self.crossover()
@@ -64,6 +65,16 @@ class Population:
         for s in self.species:
             s.calculate_fitnesses(self.fitness_evaluator)
 
+    def adjust_species_sizes(self):
+        mean_fitness = 0.0
+        for s in self.species:
+            mean_fitness += s.total_fitness
+
+        mean_fitness /= len(self.networks)
+
+        for s in self.species:
+            s.new_size = round(s.total_fitness / mean_fitness)
+
     def cull(self):
         # Only keep the top performing members alive
         for s in self.species:
@@ -78,8 +89,10 @@ class Population:
             offspring = []
             if len(s.members) < 2:
                 if len(s.members) == 1:
-                    self.networks.append(s.members[0])
-                continue
+                    # self.networks.append(s.members[0])
+                    # Asexual reproduction for 1 member species
+                    s.members.append(s.members[0].get_child(s.members[0], self.create_empty_genome()))
+                # continue
 
             for i in range(s.new_size):
                 parent_a, parent_b = random.sample(s.members, 2)
