@@ -70,7 +70,6 @@ class Genome:
 
         self.insert_connection(conn_a)
         self.insert_connection(conn_b)
-        self.nodes.append(node)
 
         # Insert the new node into this genome in a sorted fashion, for faster computation in the future
         for idx, n in enumerate(self.nodes):
@@ -102,12 +101,12 @@ class Genome:
 
         # Connections are only created from a lower to a higher X to prevent cycles and assist in calculation sequencing
         if node_a.x > node_b.x:
-            temp = node_a
-            node_a = node_b
-            node_b = temp
+            node_a, node_b = node_b, node_a
 
         conn = self.innovation_guardian.attempt_create_empty_connection(node_a, node_b)
 
+        conn.from_node = node_a
+        conn.to_node = node_b
         conn.weight = random.uniform(-3.0, 3.0)
 
         self.insert_connection(conn)
@@ -169,15 +168,15 @@ class Genome:
         similar = 0
         weight_diff = 0.0
 
-        while idx_a <= len(self.connections) and idx_b <= len(genome.connections):
+        while idx_a < len(self.connections) and idx_b < len(genome.connections):
             innov_a = self.connections[idx_a].innovation_number
             innov_b = genome.connections[idx_b].innovation_number
 
             if innov_a == innov_b:
+                weight_diff += abs(self.connections[idx_a].weight - genome.connections[idx_b].weight)
                 similar += 1
                 idx_a += 1
                 idx_b += 1
-                weight_diff += abs(self.connections[idx_a] - genome.connections[idx_b])
 
             elif innov_a < innov_b:
                 disjoint += 1
@@ -187,12 +186,18 @@ class Genome:
                 disjoint += 1
                 idx_b += 1
 
-        weight_diff /= similar
+        if similar == 0:
+            weight_diff = 0
+        else:
+            weight_diff /= similar
         excess = abs(len(self.connections) - len(genome.connections))
         length = max(len(self.connections), len(genome.connections))
 
-        delta = (EXCESS_COEFFICIENT * excess / length) + (
-                    DISJOINT_COEFFICIENT * disjoint / length) + WEIGHT_COEFFICIENT * weight_diff
+        if length == 0:
+            delta = 0
+        else:
+            delta = (EXCESS_COEFFICIENT * excess / length) + (
+                        DISJOINT_COEFFICIENT * disjoint / length) + WEIGHT_COEFFICIENT * weight_diff
 
         return delta
 
@@ -238,8 +243,8 @@ class Genome:
                 idx_b += 1
 
             elif innov_a < innov_b:
-                idx_a += 1
                 connection = self.connections[idx_a]
+                idx_a += 1
 
             else:  # Disjoint genes of the partner are not inherited (assuming the partner has lower fitness)
                 idx_b += 1
@@ -263,6 +268,8 @@ class Genome:
 
             # Returns an existing connection since we are only copying genes, not making new ones
             conn = self.innovation_guardian.attempt_create_empty_connection(from_node, to_node)
+            conn.from_node = from_node
+            conn.to_node = to_node
             conn.weight = weight
             conn.is_enabled = is_enabled
 

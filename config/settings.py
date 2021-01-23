@@ -12,12 +12,12 @@ OUT_NODE_X = 0.9
 IN_NODE_X = 0.1
 
 # ========================== Population parameters ========================== #
-POPULATION_SIZE = 2
+POPULATION_SIZE = 1000
 EXCESS_COEFFICIENT = 2.0
 DISJOINT_COEFFICIENT = 2.0
 WEIGHT_COEFFICIENT = 1.0
-DELTA_THRESHOLD = 5
-SURVIVORS = 0.5
+DELTA_THRESHOLD = 2.5
+SURVIVORS = 0.8
 
 # ========================= General configurations ========================== #
 RESOLUTION = [720, 480]

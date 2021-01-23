@@ -1,3 +1,4 @@
+import math
 import random
 
 from classes.Individuals.Genome import Genome
@@ -29,9 +30,9 @@ class Population:
 
     def evolve(self):
         self.speciate()
-        self.erase_extinct_species()
         self.calculate_fitnesses()
         self.cull()
+        self.erase_extinct_species()
         self.crossover()
         self.mutate()
 
@@ -57,34 +58,43 @@ class Population:
 
     def erase_extinct_species(self):
         # Prevent empty species lists from cluttering the program
-        for s in self.species:
-            if len(s.members) <= 1:
-                if len(s.members == 1):
-                    # Toss the remaining survivor into a random species and wish him all the best
-                    random.choice(self.species).members.append(s.members[0])
-                self.species.remove(s)
+        # for s in self.species:
+        #     if len(s.members) <= 0:
+        #         # if len(s.members) == 1:
+        #         #     # Toss the remaining survivor into a random species and wish him all the best
+        #         #     random.choice(self.species).members.append(s.members[0])
+        #         self.species.remove(s)
+
+        self.species = [x for x in self.species if len(x.members) >= 1]
 
     def calculate_fitnesses(self):
         # Calculate the mean adjusted fitnesses based on the specifications described in the original NEAT paper
         for s in self.species:
-            s.calculate_fitnesses()
+            s.calculate_fitnesses(self.fitness_evaluator)
 
     def cull(self):
         # Only keep the top performing members alive
         for s in self.species:
             s.members.sort(key=lambda x: x.fitness)
-            cutoff = round((1 - SURVIVORS) * len(s.members))
+            cutoff = math.floor((1 - SURVIVORS) * len(s.members))
             s.members = s.members[cutoff:]
 
     def crossover(self):
         self.networks = []
 
         for s in self.species:
+            offspring = []
+            if len(s.members) < 2:
+                if len(s.members) == 1:
+                    self.networks.append(s.members[0])
+                continue
+
             for i in range(s.new_size):
                 parent_a, parent_b = random.sample(s.members, 2)
                 child = parent_a.get_child(parent_b, self.create_empty_genome())
-                s.members.append(child)
+                offspring.append(child)
                 self.networks.append(child)
+            s.members = offspring
 
     def mutate(self):
         for i in self.networks:
