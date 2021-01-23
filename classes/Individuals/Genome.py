@@ -107,7 +107,7 @@ class Genome:
 
         conn.from_node = node_a
         conn.to_node = node_b
-        conn.weight = random.uniform(-3.0, 3.0)
+        conn.weight = random.uniform(-WEIGHT_INITIAL_CAP, WEIGHT_INITIAL_CAP)
 
         self.insert_connection(conn)
         node_a.out_links.append(conn)

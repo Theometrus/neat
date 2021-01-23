@@ -1,9 +1,10 @@
+from classes.Activation.Bias import Bias
 from classes.Activation.Identity import Identity
 from classes.Activation.ReLU import ReLU
 from classes.Activation.Sigmoid import Sigmoid
 from classes.Individuals.Connection import Connection
 from classes.Individuals.Node import Node
-from config.settings import INPUT_NODES, OUTPUT_NODES, IN_NODE_X, OUT_NODE_X
+from config.settings import INPUT_NODES, OUTPUT_NODES, IN_NODE_X, OUT_NODE_X, BIAS_NODE_X
 
 
 class InnovationGuardian:
@@ -27,6 +28,9 @@ class InnovationGuardian:
 
         elif x == OUT_NODE_X:  # Output node
             activation_fn = Sigmoid()
+
+        elif x == BIAS_NODE_X:
+            activation_fn = Bias()
 
         else:  # Hidden node
             activation_fn = ReLU()

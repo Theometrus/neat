@@ -25,13 +25,13 @@ def main():
         outs = {}
         pop.fitness_evaluator = xor
         # inputs = [1, random.choice([0, 1]), random.choice([0, 1])]
-        pop.propagate([1, 0, 1])
+        pop.propagate([0, 1])
 
-        pop.propagate([1, 0, 0])
+        pop.propagate([0, 0])
 
-        pop.propagate([1, 1, 0])
+        pop.propagate([1, 0])
 
-        pop.propagate([1, 1, 1])
+        pop.propagate([1, 1])
 
         for i in pop.networks:
             outs[i] = i.outputs

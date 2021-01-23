@@ -1,6 +1,6 @@
 import sys
 
-from config.settings import INPUT_NODES, OUT_NODE_X
+from config.settings import INPUT_NODES, OUT_NODE_X, IN_NODE_X, BIAS_NODE_X
 
 
 class Network:
@@ -30,7 +30,7 @@ class Network:
             else:
                 i.calculate(inputs[input_ctr])
 
-            if input_ctr + 1 < len(inputs):
+            if input_ctr + 1 < len(inputs) and i.x != BIAS_NODE_X:
                 input_ctr += 1
 
         return self.outputs

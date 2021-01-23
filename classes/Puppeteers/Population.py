@@ -5,8 +5,7 @@ from classes.Individuals.Genome import Genome
 from classes.Individuals.Network import Network
 from classes.Individuals.Species import Species
 from classes.Puppeteers.InnovationGuardian import InnovationGuardian
-from config.settings import INPUT_NODES, OUTPUT_NODES, IN_NODE_X, OUT_NODE_X, POPULATION_SIZE, DELTA_THRESHOLD, \
-    SURVIVORS
+from config.settings import *
 
 
 class Population:
@@ -58,13 +57,6 @@ class Population:
 
     def erase_extinct_species(self):
         # Prevent empty species lists from cluttering the program
-        # for s in self.species:
-        #     if len(s.members) <= 0:
-        #         # if len(s.members) == 1:
-        #         #     # Toss the remaining survivor into a random species and wish him all the best
-        #         #     random.choice(self.species).members.append(s.members[0])
-        #         self.species.remove(s)
-
         self.species = [x for x in self.species if len(x.members) >= 1]
 
     def calculate_fitnesses(self):
@@ -109,6 +101,10 @@ class Population:
         return Genome(nodes_clone, self.innovation_guard)
 
     def make_starting_nodes(self):
+        for i in range(BIAS_NODES):
+            node = self.innovation_guard.attempt_create_empty_node(len(self.initial_nodes), BIAS_NODE_X, i)
+            self.initial_nodes.append(node)
+
         for i in range(INPUT_NODES):
             node = self.innovation_guard.attempt_create_empty_node(len(self.initial_nodes), IN_NODE_X, i)
             self.initial_nodes.append(node)
