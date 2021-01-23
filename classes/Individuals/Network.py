@@ -1,6 +1,6 @@
 import sys
 
-from config.settings import INPUT_NODES, OUT_NODE_X, BIAS_NODE_X
+from config.settings import INPUT_NODES
 
 
 class Network:
@@ -25,12 +25,12 @@ class Network:
 
         # Since the nodes are sorted by X, we can assume the sensors are all at the start
         for i in self.genome.nodes:
-            if i.x >= OUT_NODE_X:
+            if i.node_type == "OUTPUT":
                 self.outputs.append(i.calculate(inputs[input_ctr]))
             else:
                 i.calculate(inputs[input_ctr])
 
-            if input_ctr + 1 < len(inputs) and i.x != BIAS_NODE_X:
+            if input_ctr + 1 < len(inputs) and i.node_type != "BIAS":
                 input_ctr += 1
 
         return self.outputs

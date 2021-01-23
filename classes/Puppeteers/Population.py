@@ -32,8 +32,8 @@ class Population:
         self.calculate_fitnesses()
         self.adjust_species_sizes()
         self.cull()
-        self.erase_extinct_species()
         self.crossover()
+        self.erase_extinct_species()
         self.mutate()
 
     def speciate(self):
@@ -87,12 +87,12 @@ class Population:
 
         for s in self.species:
             offspring = []
-            if len(s.members) < 2:
-                if len(s.members) == 1:
-                    # self.networks.append(s.members[0])
-                    # Asexual reproduction for 1 member species
-                    s.members.append(s.members[0].get_child(s.members[0], self.create_empty_genome()))
-                # continue
+
+            if len(s.members) == 1:
+                # Asexual reproduction for 1 member species
+                s.members.append(s.members[0].get_child(s.members[0], self.create_empty_genome()))
+            elif len(s.members) == 0:
+                continue
 
             for i in range(s.new_size):
                 parent_a, parent_b = random.sample(s.members, 2)
@@ -115,15 +115,15 @@ class Population:
 
     def make_starting_nodes(self):
         for i in range(BIAS_NODES):
-            node = self.innovation_guard.attempt_create_empty_node(len(self.initial_nodes), BIAS_NODE_X, i)
+            node = self.innovation_guard.attempt_create_empty_node(len(self.initial_nodes), IN_NODE_X, i, "BIAS")
             self.initial_nodes.append(node)
 
         for i in range(INPUT_NODES):
-            node = self.innovation_guard.attempt_create_empty_node(len(self.initial_nodes), IN_NODE_X, i)
+            node = self.innovation_guard.attempt_create_empty_node(len(self.initial_nodes), IN_NODE_X, i, "SENSOR")
             self.initial_nodes.append(node)
 
         for i in range(OUTPUT_NODES):
-            node = self.innovation_guard.attempt_create_empty_node(len(self.initial_nodes), OUT_NODE_X, i)
+            node = self.innovation_guard.attempt_create_empty_node(len(self.initial_nodes), OUT_NODE_X, i, "OUTPUT")
             self.initial_nodes.append(node)
 
     def make_starting_networks(self):

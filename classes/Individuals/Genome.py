@@ -55,7 +55,7 @@ class Genome:
         x = (conn.to_node.x + conn.from_node.x) / 2
         y = ((conn.to_node.y + conn.from_node.y) / 2) * random.uniform(0.6, 1.4)  # Perturb the Y for better drawing
 
-        node: Node = self.innovation_guardian.attempt_create_empty_node(conn.innovation_number, x, y)
+        node: Node = self.innovation_guardian.attempt_create_empty_node(conn.innovation_number, x, y, "HIDDEN")
         conn_a: Connection = self.innovation_guardian.attempt_create_empty_connection(conn.from_node, node)
         conn_b: Connection = self.innovation_guardian.attempt_create_empty_connection(node, conn.to_node)
 
