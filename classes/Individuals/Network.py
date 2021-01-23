@@ -21,7 +21,6 @@ class Network:
         if len(inputs) != INPUT_NODES:
             print("Critical error: INPUT MISMATCH. Exiting")
             sys.exit()
-
         input_ctr = 0
 
         # Since the nodes are sorted by X, we can assume the sensors are all at the start
