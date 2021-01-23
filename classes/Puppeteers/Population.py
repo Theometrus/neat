@@ -1,7 +1,11 @@
+import random
+
 from classes.Individuals.Genome import Genome
 from classes.Individuals.Network import Network
+from classes.Individuals.Species import Species
 from classes.Puppeteers.InnovationGuardian import InnovationGuardian
-from config.settings import INPUT_NODES, OUTPUT_NODES, IN_NODE_X, OUT_NODE_X, POPULATION_SIZE
+from config.settings import INPUT_NODES, OUTPUT_NODES, IN_NODE_X, OUT_NODE_X, POPULATION_SIZE, DELTA_THRESHOLD, \
+    SURVIVORS
 
 
 class Population:
@@ -27,25 +31,60 @@ class Population:
         self.speciate()
         self.erase_extinct_species()
         self.calculate_fitnesses()
+        self.cull()
         self.crossover()
         self.mutate()
 
     def speciate(self):
-        pass
+        self.species = []
+
+        for n in self.networks:
+            classified = False
+
+            for s in self.species:
+                rep = random.choice(s.members)
+                delta = n.compare_to(rep)
+                if delta <= DELTA_THRESHOLD:
+                    s.members.append(n)
+                    n.species = s
+                    classified = True
+                    break
+
+            if not classified:
+                species = Species()
+                species.members.append(n)
+                self.species.append(species)
 
     def erase_extinct_species(self):
         # Prevent empty species lists from cluttering the program
-        for species in self.species:
-            if len(species.members) == 0:
-                self.species.remove(species)
+        for s in self.species:
+            if len(s.members) <= 1:
+                if len(s.members == 1):
+                    # Toss the remaining survivor into a random species and wish him all the best
+                    random.choice(self.species).members.append(s.members[0])
+                self.species.remove(s)
 
     def calculate_fitnesses(self):
         # Calculate the mean adjusted fitnesses based on the specifications described in the original NEAT paper
-        for i in self.species:
-            i.calculate_fitnesses()
+        for s in self.species:
+            s.calculate_fitnesses()
+
+    def cull(self):
+        # Only keep the top performing members alive
+        for s in self.species:
+            s.members.sort(key=lambda x: x.fitness)
+            cutoff = round((1 - SURVIVORS) * len(s.members))
+            s.members = s.members[cutoff:]
 
     def crossover(self):
-        pass
+        self.networks = []
+
+        for s in self.species:
+            for i in range(s.new_size):
+                parent_a, parent_b = random.sample(s.members, 2)
+                child = parent_a.get_child(parent_b, self.create_empty_genome())
+                s.members.append(child)
+                self.networks.append(child)
 
     def mutate(self):
         for i in self.networks:

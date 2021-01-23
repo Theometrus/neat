@@ -11,4 +11,3 @@ class Species:
         sum_fitnesses = self.fitness
         self.fitness /= len(self.members)
         self.new_size = round(sum_fitnesses / self.fitness)
-

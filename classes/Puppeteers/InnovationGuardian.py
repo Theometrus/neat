@@ -22,7 +22,6 @@ class InnovationGuardian:
         if self.nodes.get(innovation_number) is not None:
             return self.nodes.get(innovation_number).clone()
 
-        activation_fn = None
         if x == IN_NODE_X:  # Sensor node
             activation_fn = Identity()
 
