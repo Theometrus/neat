@@ -62,6 +62,12 @@ class Genome:
         conn_a.weight = 1.0
         conn_b.weight = conn.weight
 
+        conn_a.from_node = conn.from_node
+        conn_a.to_node = node
+
+        conn_b.from_node = node
+        conn_b.to_node = conn.to_node
+
         node.in_links.append(conn_a)
         node.out_links.append(conn_b)
 
@@ -90,7 +96,9 @@ class Genome:
             if node_a == node_b \
                     or self.connection_dict.get((node_a.innovation_number, node_b.innovation_number)) is not None \
                     or self.connection_dict.get((node_b.innovation_number, node_a.innovation_number)) is not None \
-                    or node_a.x == node_b.x:  # Prevent connections amongst sensors and output nodes
+                    or node_a.x == node_b.x\
+                    or (node_a.node_type == "BIAS" and node_b.node_type == "OUTPUT")\
+                    or (node_b.node_type == "BIAS" and node_a.node_type == "OUTPUT"):
                 continue
 
             found = True
@@ -219,6 +227,8 @@ class Genome:
             node_dict[i.innovation_number] = i
 
         while idx_a < len(self.connections) or idx_b < len(partner.connections):
+            is_enabled = False
+
             # B is initially set to infinity to control the flow of the loop down the line
             innov_b = float('inf')
 
@@ -239,6 +249,7 @@ class Genome:
                 else:
                     connection = partner.connections[idx_b]
 
+                is_enabled = True if self.connections[idx_a].is_enabled else False
                 idx_a += 1
                 idx_b += 1
 
@@ -253,7 +264,7 @@ class Genome:
             from_node: Node = connection.from_node
             to_node: Node = connection.to_node
             weight = connection.weight
-            is_enabled = connection.is_enabled
+            # is_enabled = connection.is_enabled
 
             if node_dict.get(from_node.innovation_number) is None:
                 node_dict[from_node.innovation_number] = from_node.clone()
@@ -273,27 +284,34 @@ class Genome:
             conn.weight = weight
             conn.is_enabled = is_enabled
 
-            inserted = False
-            if len(connections) == 0:
-                connections.append(conn)
-                connection_dict[(from_node.innovation_number, to_node.innovation_number)] = conn
-                inserted = True
-
-            if not inserted:
-                for idx, c in enumerate(connections):
-                    if idx + 1 >= len(connections):
-                        connections.append(conn)
-                        break
-
-                    if c.innovation_number <= conn.innovation_number <= connections[idx + 1].innovation_number:
-                        connections.insert(idx + 1, conn)
-                        break
-
-                connection_dict[(from_node.innovation_number, to_node.innovation_number)] = conn
+            connection_dict[(from_node.innovation_number, to_node.innovation_number)] = conn
+            connections.append(conn)
+            # inserted = False
+            # if len(connections) == 0:
+            #     connections.append(conn)
+            #     connection_dict[(from_node.innovation_number, to_node.innovation_number)] = conn
+            #     inserted = True
+            #
+            # if not inserted:
+            #     for idx, c in enumerate(connections):
+            #         if idx + 1 >= len(connections):
+            #             connections.append(conn)
+            #             break
+            #
+            #         if c.innovation_number <= conn.innovation_number <= connections[idx + 1].innovation_number:
+            #             connections.insert(idx + 1, conn)
+            #             break
+            #
+            #     connection_dict[(from_node.innovation_number, to_node.innovation_number)] = conn
 
             from_node.out_links.append(conn)
             to_node.in_links.append(conn)
 
+        connections = sorted(connections, key=lambda x: x.innovation_number)
+        nodes = sorted(nodes, key=lambda x: x.x)
+
+        template.nodes = nodes
         template.connections = connections
         template.connection_dict = connection_dict
+
         return template

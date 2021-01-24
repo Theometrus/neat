@@ -27,6 +27,7 @@ class Population:
 
         return outputs
 
+    # len([x for x in self.networks if len(x.genome.connections) != len(x.genome.connection_dict.items())]) != 0
     def evolve(self):
         self.speciate()
         self.calculate_fitnesses()
@@ -73,11 +74,16 @@ class Population:
         mean_fitness /= len(self.networks)
 
         for s in self.species:
+            if mean_fitness == 0:
+                s.new_size = len(s.members)
+                return
             s.new_size = round(s.total_fitness / mean_fitness)
 
     def cull(self):
         # Only keep the top performing members alive
         for s in self.species:
+            if len(s.members) < 3:
+                continue
             s.members.sort(key=lambda x: x.fitness)
             cutoff = math.floor((1 - SURVIVORS) * len(s.members))
             s.members = s.members[cutoff:]

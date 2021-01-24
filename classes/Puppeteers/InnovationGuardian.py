@@ -4,7 +4,7 @@ from classes.Activation.ReLU import ReLU
 from classes.Activation.Sigmoid import Sigmoid
 from classes.Individuals.Connection import Connection
 from classes.Individuals.Node import Node
-from config.settings import INPUT_NODES, OUTPUT_NODES, IN_NODE_X, OUT_NODE_X
+from config.settings import INPUT_NODES, OUTPUT_NODES, BIAS_NODES
 
 
 class InnovationGuardian:
@@ -16,7 +16,7 @@ class InnovationGuardian:
     def __init__(self):
         self.nodes = {}  # Keys are innovation numbers based on the connection this node split (except initial nodes)
         self.connections = {}  # Keys are tuples consisting of innovation numbers of (from_node, to_node)
-        self.latest_innovation = INPUT_NODES + OUTPUT_NODES - 1  # Node and connection innovation numbers are shared
+        self.latest_innovation = INPUT_NODES + OUTPUT_NODES + BIAS_NODES - 1  # Node and connection innovation numbers are shared
 
     def attempt_create_empty_node(self, innovation_number, x, y, node_type):
         # Will return a shell of an existing node if possible, otherwise create a new one
@@ -33,8 +33,8 @@ class InnovationGuardian:
             activation_fn = Bias()
 
         else:  # Hidden node
-            activation_fn = ReLU()
             node_type = "HIDDEN"
+            activation_fn = ReLU()
 
         node = Node(innovation_number, x, y, activation_fn, node_type)
         self.nodes[innovation_number] = node.clone()
