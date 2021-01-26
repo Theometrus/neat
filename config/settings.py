@@ -1,9 +1,14 @@
-# ========================= Mutation probabilities ========================== #
-MUTATION_RATE = 0.65
+# =========================== Mutation properties ============================ #
+MUTATION_RATE = 0.35  # Portion of individuals to reproduce asexually through mutation
+
+# Once an individual is chosen to mutate, they will mutate up to this many times, choosing
+# from the mutations below (and respecting the assigned probabilities)
+MUTATIONS_AT_ONCE = 10
 
 MUT_ADD_LINK = 0.18
 MUT_ADD_NODE = 0.01
-MUT_TOGGLE_LINK = 0.01  # Experimental
+MUT_TOGGLE_LINK = 0.01
+
 MUT_WEIGHT_ADJUST = 0.8  # Controls overall how likely the next two mutation types are to occur
 MUT_WEIGHT_SHIFT = 0.9
 MUT_WEIGHT_REASSIGN = 0.1

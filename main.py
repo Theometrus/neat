@@ -47,6 +47,7 @@ def main():
         total /= len(xor.networks)
         print("MEAN SCORE: " + str(total))
         print("================================")
+
         if total >= 14.0:
             break
         # time.sleep(1)

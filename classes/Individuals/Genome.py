@@ -37,31 +37,23 @@ class Genome:
         mutation_sum = MUT_ADD_NODE + MUT_ADD_LINK + MUT_WEIGHT_ADJUST + MUT_TOGGLE_LINK
         probabilities = [MUT_ADD_NODE/mutation_sum, MUT_ADD_LINK/mutation_sum, MUT_WEIGHT_ADJUST/mutation_sum,
                          MUT_TOGGLE_LINK/mutation_sum]
-        choices = [0, 1, 2, 3]
-        choice = np.random.choice(choices, 1, p=probabilities)
-        if choice == 0:
-            self.mutate_add_node()
-        elif choice == 1:
-            self.mutate_add_link()
-        elif choice == 2:
-            if random.uniform(0.0, 1.0) <= MUT_WEIGHT_SHIFT:
-                self.mutate_weight_shift()
-            else:
-                self.mutate_weight_reassign()
-        elif choice == 3:
-            self.mutate_toggle_link()
 
-        # if random.uniform(0.0, 1.0) <= MUT_ADD_NODE:
-        #     self.mutate_add_node()
-        # if random.uniform(0.0, 1.0) <= MUT_ADD_LINK:
-        #     self.mutate_add_link()
-        # if random.uniform(0.0, 1.0) <= MUT_TOGGLE_LINK:
-        #     self.mutate_toggle_link()
-        # if random.uniform(0.0, 1.0) <= MUT_WEIGHT_ADJUST:
-        #     if random.uniform(0.0, 1.0) <= MUT_WEIGHT_SHIFT:
-        #         self.mutate_weight_shift()
-        #     else:
-        #         self.mutate_weight_reassign()
+        choices = [0, 1, 2, 3]
+        num_to_mutate = random.choice(range(1, MUTATIONS_AT_ONCE))
+
+        for _ in range(num_to_mutate):
+            choice = np.random.choice(choices, 1, p=probabilities)
+            if choice == 0:
+                self.mutate_add_node()
+            elif choice == 1:
+                self.mutate_add_link()
+            elif choice == 2:
+                if random.uniform(0.0, 1.0) <= MUT_WEIGHT_SHIFT:
+                    self.mutate_weight_shift()
+                else:
+                    self.mutate_weight_reassign()
+            elif choice == 3:
+                self.mutate_toggle_link()
 
     def mutate_add_node(self):
         if len(self.connections) == 0:

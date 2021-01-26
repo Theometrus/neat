@@ -98,12 +98,9 @@ class Population:
             s.calculate_fitnesses(self.fitness_evaluator)
 
     def adjust_species_sizes(self):
-        mean_fitness = 0.0
-        for s in self.species:
-            mean_fitness += s.average_fitness
+        mean_fitness = sum(s.average_fitness for s in self.species)
 
         mean_fitness /= POPULATION_SIZE
-        # mean_fitness /= len(self.networks)
 
         for s in self.species:
             if mean_fitness == 0:
@@ -138,11 +135,18 @@ class Population:
             for i in range(s.new_size - 1 - elite_num):  # Excluding the representative and the elites
                 # Decide whether to use sexual (crossover) or asexual reproduction (mutation)
                 if random.uniform(0.0, 1.0) <= MUTATION_RATE:
-                    parent = random.choice(s.members)
+                    # parent = random.choice(s.members)
+                    parent = self.tournament_select(5, s.members)  # Select a best of 5
                     child = parent.get_child(parent, self.create_empty_genome())  # Effectively clones the parent
                     child.mutate()
                 else:
-                    parent_a, parent_b = random.sample(s.members, 2)
+                    parent_a = self.tournament_select(5, s.members)
+                    while True:
+                        parent_b = self.tournament_select(5, s.members)
+                        if parent_a != parent_b:
+                            break
+
+                    # parent_a, parent_b = random.sample(s.members, 2)
                     child = parent_a.get_child(parent_b, self.create_empty_genome())
                 offspring.append(child)
                 self.networks.append(child)
@@ -182,3 +186,14 @@ class Population:
             genome = self.create_empty_genome()
             network = Network(genome)
             self.networks.append(network)
+
+    def tournament_select(self, rounds, contestants):
+        champion = None
+
+        for _ in range(rounds):
+            challenger = random.choice(contestants)
+
+            if champion is None or challenger.fitness > champion.fitness:
+                champion = challenger
+
+        return champion
