@@ -40,8 +40,7 @@ class Population:
         self.adjust_species_sizes()
         self.cull()
         self.reproduce()
-        self.clear_outputs()
-        print("f")
+        self.reset_networks()
 
     def speciate(self):
         for n in self.networks:
@@ -103,12 +102,16 @@ class Population:
         for s in self.species:
             mean_fitness += s.average_fitness
 
-        mean_fitness /= len(self.networks)
+        mean_fitness /= POPULATION_SIZE
+        # mean_fitness /= len(self.networks)
 
         for s in self.species:
             if mean_fitness == 0:
                 s.new_size = len(s.members)
                 return
+            elif s.stagnation_timer == 0:
+                s.new_size = 0
+                continue
             s.new_size = round(s.average_fitness / mean_fitness)
 
     def cull(self):
@@ -126,11 +129,17 @@ class Population:
         for s in self.species:
             offspring = [s.representative]
             self.networks.append(s.representative)
+            elite_num = math.ceil(ELITES * len(s.members))
+            for i in s.members[elite_num:]:
+                elite_clone = i.get_child(i, self.create_empty_genome())
+                offspring.append(elite_clone)
+                self.networks.append(elite_clone)
 
-            for i in range(s.new_size - 1):  # Excluding the representative
+            for i in range(s.new_size - 1 - elite_num):  # Excluding the representative and the elites
                 # Decide whether to use sexual (crossover) or asexual reproduction (mutation)
                 if random.uniform(0.0, 1.0) <= MUTATION_RATE:
-                    child = random.choice(s.members)
+                    parent = random.choice(s.members)
+                    child = parent.get_child(parent, self.create_empty_genome())  # Effectively clones the parent
                     child.mutate()
                 else:
                     parent_a, parent_b = random.sample(s.members, 2)
@@ -139,9 +148,10 @@ class Population:
                 self.networks.append(child)
             s.members = offspring
 
-    def clear_outputs(self):
+    def reset_networks(self):
         for i in self.networks:
             i.outputs = []
+            i.fitness = 0.0
 
     def create_empty_genome(self):
         nodes_clone = []

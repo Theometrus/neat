@@ -1,5 +1,7 @@
 import random
 
+import numpy as np
+
 from classes.Activation.ReLU import ReLU
 from classes.Individuals.Connection import Connection
 from classes.Individuals.Node import Node
@@ -32,17 +34,34 @@ class Genome:
         return conn
 
     def mutate(self):
-        if random.uniform(0.0, 1.0) <= MUT_ADD_NODE:
+        mutation_sum = MUT_ADD_NODE + MUT_ADD_LINK + MUT_WEIGHT_ADJUST + MUT_TOGGLE_LINK
+        probabilities = [MUT_ADD_NODE/mutation_sum, MUT_ADD_LINK/mutation_sum, MUT_WEIGHT_ADJUST/mutation_sum,
+                         MUT_TOGGLE_LINK/mutation_sum]
+        choices = [0, 1, 2, 3]
+        choice = np.random.choice(choices, 1, p=probabilities)
+        if choice == 0:
             self.mutate_add_node()
-        if random.uniform(0.0, 1.0) <= MUT_ADD_LINK:
+        elif choice == 1:
             self.mutate_add_link()
-        if random.uniform(0.0, 1.0) <= MUT_TOGGLE_LINK:
-            self.mutate_toggle_link()
-        if random.uniform(0.0, 1.0) <= MUT_WEIGHT_ADJUST:
+        elif choice == 2:
             if random.uniform(0.0, 1.0) <= MUT_WEIGHT_SHIFT:
                 self.mutate_weight_shift()
             else:
                 self.mutate_weight_reassign()
+        elif choice == 3:
+            self.mutate_toggle_link()
+
+        # if random.uniform(0.0, 1.0) <= MUT_ADD_NODE:
+        #     self.mutate_add_node()
+        # if random.uniform(0.0, 1.0) <= MUT_ADD_LINK:
+        #     self.mutate_add_link()
+        # if random.uniform(0.0, 1.0) <= MUT_TOGGLE_LINK:
+        #     self.mutate_toggle_link()
+        # if random.uniform(0.0, 1.0) <= MUT_WEIGHT_ADJUST:
+        #     if random.uniform(0.0, 1.0) <= MUT_WEIGHT_SHIFT:
+        #         self.mutate_weight_shift()
+        #     else:
+        #         self.mutate_weight_reassign()
 
     def mutate_add_node(self):
         if len(self.connections) == 0:
@@ -157,7 +176,7 @@ class Genome:
         conn = self.find_enabled_connection()
 
         if conn is not None:
-            conn.weight += random.uniform(-2.0, 2.0)
+            conn.weight += random.uniform(-1.0, 1.0)
 
     def mutate_weight_reassign(self):
         # Completely randomizes a connection's weight
@@ -239,6 +258,8 @@ class Genome:
             else:
                 break
 
+            is_enabled = self.connections[idx_a].is_enabled
+
             if idx_b < len(partner.connections):
                 innov_b = partner.connections[idx_b].innovation_number
 
@@ -248,6 +269,15 @@ class Genome:
 
                 else:
                     connection = partner.connections[idx_b]
+
+                # 75% chance for a connection to be disabled if it was disabled in either parent
+                if not self.connections[idx_a].is_enabled or not partner.connections[idx_b].is_enabled:
+                    if random.uniform(0.0, 1.0) <= 0.75:
+                        is_enabled = False
+                    else:
+                        is_enabled = True
+                else:
+                    is_enabled = True
 
                 idx_a += 1
                 idx_b += 1
@@ -260,7 +290,6 @@ class Genome:
                 idx_b += 1
                 continue
 
-            is_enabled = self.connections[idx_a - 1].is_enabled
             from_node: Node = connection.from_node
             to_node: Node = connection.to_node
             weight = connection.weight

@@ -15,12 +15,13 @@ class Node:
 
     def calculate(self, input_val):
         self.output = 0.0
-        if self.node_type == "SENSOR":
+        if self.node_type == "SENSOR" or self.node_type == "BIAS":
             self.output = self.activation_fn.compute(input_val)
 
-        else:  # Bias, hidden, or output node
+        else:  # hidden, or output node
             for link in self.in_links:
-                self.output += link.weight * link.from_node.output
+                if link.is_enabled:
+                    self.output += link.weight * link.from_node.output
 
             self.output = self.activation_fn.compute(self.output)
         return self.output

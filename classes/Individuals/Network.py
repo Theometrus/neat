@@ -27,6 +27,7 @@ class Network:
         for i in self.genome.nodes:
             if i.node_type == "OUTPUT":
                 self.outputs.append(i.calculate(inputs[input_ctr]))
+
             else:
                 i.calculate(inputs[input_ctr])
 
