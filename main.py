@@ -1,15 +1,9 @@
 import random
 import time
 
-import numpy
-
 '''
-- On innovation numbers: nodes and connections share them (?)
-- Innovation numbers are passed on through crossover; mutations result in brand new innovation numbers
-- For each generation, keep a list of innovations. If the same innovations happens more than once, give it the same num
 - Species representatives
 - Ordered list of species
-- Avg of fitnesses, not sum! For num of children
 - During speciation, each network is compared against the representative from the *previous* generation (random!)
 - 75% for gene to be disabled if disabled in either parent
 - Elitism
@@ -25,13 +19,11 @@ def main():
     xor = XORFitnessEvaluator()
     pop = Population(xor)
     gen = 0
-    mean = 0.0
-    total = 0.0
 
     # pop.networks[0].genome.mutate_add_link()
     # # pop.networks[0].genome.mutate_add_node()
     # print(pop.networks[0].calculate([0, 1]))
-    timeout = 100
+    timeout = 1000
     xor_inputs = [[1, 1], [0, 0], [1, 0], [0, 1]]
     while timeout > 0:
         xor = XORFitnessEvaluator()
@@ -55,13 +47,12 @@ def main():
 
             xor.calculate(i, outs, inputs)
 
-
         pop.evolve()
         gen += 1
         print("GENERATION " + str(gen))
         print(inputs)
         print('----------------')
-        mean_score = 0.0
+        total = 0.0
         for s in pop.species:
             print(str(len(s.members)))
             print("************")
@@ -71,8 +62,10 @@ def main():
             total += v
         # mean_score /= len(xor.networks.items())
         total /= len(xor.networks)
-        print("MEAN SCORE: " + str(total/gen))
+        print("MEAN SCORE: " + str(total))
         print("================================")
+        if total >= 15.0:
+            break
         # time.sleep(1)
         timeout -= 1
 
@@ -83,10 +76,10 @@ def main():
     xor = XORFitnessEvaluator()
     outs = {}
     pop.fitness_evaluator = xor
-    pop.propagate([1, 0])
     pop.propagate([0, 0])
-    pop.propagate([1, 1])
     pop.propagate([0, 1])
+    pop.propagate([1, 0])
+    pop.propagate([1, 1])
     for i in pop.networks:
         outs[i] = i.outputs
         xor.calculate(i, outs, [1, 0, 0, 0, 1, 1, 0, 1])

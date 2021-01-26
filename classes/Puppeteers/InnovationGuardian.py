@@ -1,12 +1,3 @@
-from classes.Activation.Bias import Bias
-from classes.Activation.Identity import Identity
-from classes.Activation.ReLU import ReLU
-from classes.Activation.Sigmoid import Sigmoid
-from classes.Individuals.Connection import Connection
-from classes.Individuals.Node import Node
-from config.settings import INPUT_NODES, OUTPUT_NODES, BIAS_NODES
-
-
 class InnovationGuardian:
     """
     Responsible for keeping track of all unique nodes and connections,
@@ -14,43 +5,25 @@ class InnovationGuardian:
     """
 
     def __init__(self):
-        self.nodes = {}  # Keys are innovation numbers based on the connection this node split (except initial nodes)
-        self.connections = {}  # Keys are tuples consisting of innovation numbers of (from_node, to_node)
-        self.latest_innovation = INPUT_NODES + OUTPUT_NODES + BIAS_NODES - 1  # Node and connection innovation numbers are shared
+        self.conn_innov = 0
+        self.node_innov = 0
+        self.current_conn_innovations = {}  # Keys: tuples (from_node_innov, to_node_innov)
+        self.current_node_innovations = {}  # Keys: tuples (from_node_innov, to_node_innov)
 
-    def attempt_create_empty_node(self, innovation_number, x, y, node_type):
-        # Will return a shell of an existing node if possible, otherwise create a new one
-        if self.nodes.get(innovation_number) is not None:
-            return self.nodes.get(innovation_number).clone()
+    def new_generation(self):
+        self.current_node_innovations = {}
+        self.current_conn_innovations = {}
 
-        if node_type == "SENSOR":
-            activation_fn = Identity()
+    def register_node(self, from_innov, to_innov):
+        if self.current_node_innovations.get((from_innov, to_innov)) is None:
+            self.current_node_innovations[(from_innov, to_innov)] = self.node_innov
+            self.node_innov += 1
 
-        elif node_type == "OUTPUT":
-            activation_fn = Sigmoid()
+        return self.current_node_innovations[(from_innov, to_innov)]
 
-        elif node_type == "BIAS":
-            activation_fn = Bias()
+    def register_connection(self, from_innov, to_innov):
+        if self.current_conn_innovations.get((from_innov, to_innov)) is None:
+            self.current_conn_innovations[(from_innov, to_innov)] = self.conn_innov
+            self.conn_innov += 1
 
-        else:  # Hidden node
-            node_type = "HIDDEN"
-            activation_fn = ReLU()
-
-        node = Node(innovation_number, x, y, activation_fn, node_type)
-        self.nodes[innovation_number] = node.clone()
-
-        return node
-
-    def attempt_create_empty_connection(self, from_node, to_node):
-        from_innovation = from_node.innovation_number
-        to_innovation = to_node.innovation_number
-
-        if self.connections.get((from_innovation, to_innovation)) is not None:
-            return self.connections.get((from_innovation, to_innovation)).clone()
-
-        self.latest_innovation += 1
-
-        conn = Connection(from_node, to_node, self.latest_innovation)
-        self.connections[(from_innovation, to_innovation)] = conn.clone()
-
-        return conn
+        return self.current_conn_innovations[(from_innov, to_innov)]

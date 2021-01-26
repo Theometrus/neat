@@ -1,5 +1,6 @@
 import random
 
+from classes.Activation.ReLU import ReLU
 from classes.Individuals.Connection import Connection
 from classes.Individuals.Node import Node
 from config.settings import *
@@ -56,18 +57,19 @@ class Genome:
         x = (conn.to_node.x + conn.from_node.x) / 2
         y = ((conn.to_node.y + conn.from_node.y) / 2) * random.uniform(0.6, 1.4)  # Perturb the Y for better drawing
 
-        node: Node = self.innovation_guardian.attempt_create_empty_node(conn.innovation_number, x, y, "HIDDEN")
-        conn_a: Connection = self.innovation_guardian.attempt_create_empty_connection(conn.from_node, node)
-        conn_b: Connection = self.innovation_guardian.attempt_create_empty_connection(node, conn.to_node)
+        node = Node(self.innovation_guardian.register_node(conn.from_node.innovation_number,
+                                                           conn.to_node.innovation_number), x, y, ReLU(), "HIDDEN")
+
+        conn_a = Connection(conn.from_node, node,
+                            self.innovation_guardian.register_connection(conn.from_node.innovation_number,
+                                                                         node.innovation_number))
+
+        conn_b = Connection(node, conn.to_node,
+                            self.innovation_guardian.register_connection(node.innovation_number,
+                                                                         conn.to_node.innovation_number))
 
         conn_a.weight = 1.0
         conn_b.weight = conn.weight
-
-        conn_a.from_node = conn.from_node
-        conn_a.to_node = node
-
-        conn_b.from_node = node
-        conn_b.to_node = conn.to_node
 
         node.in_links.append(conn_a)
         node.out_links.append(conn_b)
@@ -97,9 +99,7 @@ class Genome:
             if node_a == node_b \
                     or self.connection_dict.get((node_a.innovation_number, node_b.innovation_number)) is not None \
                     or self.connection_dict.get((node_b.innovation_number, node_a.innovation_number)) is not None \
-                    or node_a.x == node_b.x\
-                    or (node_a.node_type == "BIAS" and node_b.node_type == "OUTPUT")\
-                    or (node_b.node_type == "BIAS" and node_a.node_type == "OUTPUT"):
+                    or node_a.x == node_b.x:
                 continue
 
             found = True
@@ -112,10 +112,9 @@ class Genome:
         if node_a.x > node_b.x:
             node_a, node_b = node_b, node_a
 
-        conn = self.innovation_guardian.attempt_create_empty_connection(node_a, node_b)
+        conn = Connection(node_a, node_b, self.innovation_guardian.register_connection(node_a.innovation_number,
+                                                                                       node_b.innovation_number))
 
-        conn.from_node = node_a
-        conn.to_node = node_b
         conn.weight = random.uniform(-WEIGHT_INITIAL_CAP, WEIGHT_INITIAL_CAP)
 
         self.insert_connection(conn)
@@ -208,7 +207,7 @@ class Genome:
             if length < 20:
                 length = 1
             delta = (EXCESS_COEFFICIENT * excess / length) + (
-                        DISJOINT_COEFFICIENT * disjoint / length) + WEIGHT_COEFFICIENT * weight_diff
+                    DISJOINT_COEFFICIENT * disjoint / length) + WEIGHT_COEFFICIENT * weight_diff
 
         return delta
 
@@ -225,13 +224,11 @@ class Genome:
         connections = []
         connection_dict = {}
 
-        # Register existing nodes from the template (sensors and output nodes)
+        # Register existing nodes from the template (bias, sensors and output nodes)
         for i in template.nodes:
             node_dict[i.innovation_number] = i
 
         while idx_a < len(self.connections) or idx_b < len(partner.connections):
-            is_enabled = False
-
             # B is initially set to infinity to control the flow of the loop down the line
             innov_b = float('inf')
 
@@ -267,7 +264,6 @@ class Genome:
             from_node: Node = connection.from_node
             to_node: Node = connection.to_node
             weight = connection.weight
-            # is_enabled = connection.is_enabled
 
             if node_dict.get(from_node.innovation_number) is None:
                 node_dict[from_node.innovation_number] = from_node.clone()
@@ -280,10 +276,7 @@ class Genome:
             from_node = node_dict[from_node.innovation_number]
             to_node = node_dict[to_node.innovation_number]
 
-            # Returns an existing connection since we are only copying genes, not making new ones
-            conn = self.innovation_guardian.attempt_create_empty_connection(from_node, to_node)
-            conn.from_node = from_node
-            conn.to_node = to_node
+            conn = Connection(from_node, to_node, connection.innovation_number)
             conn.weight = weight
             conn.is_enabled = is_enabled
 
