@@ -47,6 +47,7 @@ class Population:
                 rep = random.choice(s.members)
                 delta = n.compare_to(rep)
                 if delta <= DELTA_THRESHOLD:
+                # if delta <= s.private_delta:
                     s.members.append(n)
                     n.species = s
                     classified = True
@@ -95,8 +96,11 @@ class Population:
             offspring = []
 
             if len(s.members) == 1:
-                # Asexual reproduction for 1 member species
-                s.members.append(s.members[0].get_child(s.members[0], self.create_empty_genome()))
+                child = s.members[0].get_child(s.members[0], self.create_empty_genome())
+                # if s.new_size > 5:
+                #     s.private_delta -= 0.3
+                # self.networks.append(child)
+                s.members.append(child)
             elif len(s.members) == 0:
                 continue
 

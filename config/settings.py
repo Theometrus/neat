@@ -1,8 +1,9 @@
 # ========================= Mutation probabilities ========================== #
-MUT_ADD_LINK = 1.0
-MUT_WEIGHT_SHIFT = 0
-MUT_WEIGHT_REASSIGN = 0
-MUT_ADD_NODE = 1.0
+MUT_ADD_LINK = 0.05
+MUT_WEIGHT_ADJUST = 0.8
+MUT_WEIGHT_SHIFT = 0.9
+MUT_WEIGHT_REASSIGN = 0.1
+MUT_ADD_NODE = 0.03
 MUT_TOGGLE_LINK = 0  # Currently broken - causes erroneous behaviour
 
 # ======================== Initial network topology ========================= #
@@ -14,11 +15,11 @@ IN_NODE_X = 0.1
 WEIGHT_INITIAL_CAP = 4.0
 
 # ========================== Population parameters ========================== #
-POPULATION_SIZE = 100
-EXCESS_COEFFICIENT = 2.0
-DISJOINT_COEFFICIENT = 2.0
-WEIGHT_COEFFICIENT = 1.0
-DELTA_THRESHOLD = 2.5
+POPULATION_SIZE = 150
+EXCESS_COEFFICIENT = 1.0
+DISJOINT_COEFFICIENT = 1.0
+WEIGHT_COEFFICIENT = 0.4
+DELTA_THRESHOLD = 3.0
 SURVIVORS = 0.2
 
 # ========================= General configurations ========================== #

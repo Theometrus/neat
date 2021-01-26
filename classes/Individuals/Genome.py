@@ -37,10 +37,11 @@ class Genome:
             self.mutate_add_link()
         if random.uniform(0.0, 1.0) <= MUT_TOGGLE_LINK:
             self.mutate_toggle_link()
-        if random.uniform(0.0, 1.0) <= MUT_WEIGHT_SHIFT:
-            self.mutate_weight_shift()
-        if random.uniform(0.0, 1.0) <= MUT_WEIGHT_REASSIGN:
-            self.mutate_weight_reassign()
+        if random.uniform(0.0, 1.0) <= MUT_WEIGHT_ADJUST:
+            if random.uniform(0.0, 1.0) <= MUT_WEIGHT_SHIFT:
+                self.mutate_weight_shift()
+            else:
+                self.mutate_weight_reassign()
 
     def mutate_add_node(self):
         if len(self.connections) == 0:
@@ -204,6 +205,8 @@ class Genome:
         if length == 0:
             delta = 0
         else:
+            if length < 20:
+                length = 1
             delta = (EXCESS_COEFFICIENT * excess / length) + (
                         DISJOINT_COEFFICIENT * disjoint / length) + WEIGHT_COEFFICIENT * weight_diff
 
@@ -249,7 +252,6 @@ class Genome:
                 else:
                     connection = partner.connections[idx_b]
 
-                is_enabled = True if self.connections[idx_a].is_enabled else False
                 idx_a += 1
                 idx_b += 1
 
@@ -261,6 +263,7 @@ class Genome:
                 idx_b += 1
                 continue
 
+            is_enabled = self.connections[idx_a - 1].is_enabled
             from_node: Node = connection.from_node
             to_node: Node = connection.to_node
             weight = connection.weight
@@ -286,23 +289,6 @@ class Genome:
 
             connection_dict[(from_node.innovation_number, to_node.innovation_number)] = conn
             connections.append(conn)
-            # inserted = False
-            # if len(connections) == 0:
-            #     connections.append(conn)
-            #     connection_dict[(from_node.innovation_number, to_node.innovation_number)] = conn
-            #     inserted = True
-            #
-            # if not inserted:
-            #     for idx, c in enumerate(connections):
-            #         if idx + 1 >= len(connections):
-            #             connections.append(conn)
-            #             break
-            #
-            #         if c.innovation_number <= conn.innovation_number <= connections[idx + 1].innovation_number:
-            #             connections.insert(idx + 1, conn)
-            #             break
-            #
-            #     connection_dict[(from_node.innovation_number, to_node.innovation_number)] = conn
 
             from_node.out_links.append(conn)
             to_node.in_links.append(conn)
