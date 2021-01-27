@@ -48,12 +48,23 @@ class Genome:
             elif choice == 1:
                 self.mutate_add_link()
             elif choice == 2:
-                if random.uniform(0.0, 1.0) <= MUT_WEIGHT_SHIFT:
-                    self.mutate_weight_shift()
-                else:
-                    self.mutate_weight_reassign()
+                self.mutate_adjust_weights()
+                # if random.uniform(0.0, 1.0) <= MUT_WEIGHT_SHIFT:
+                #     self.mutate_weight_shift()
+                # else:
+                #     self.mutate_weight_reassign()
             elif choice == 3:
                 self.mutate_toggle_link()
+
+    def mutate_adjust_weights(self):
+        for i in self.connections:
+            if random.uniform(0.0, 1.0) <= MUT_WEIGHT_SHIFT + MUT_WEIGHT_REASSIGN:
+                if random.uniform(0.0, MUT_WEIGHT_SHIFT + MUT_WEIGHT_REASSIGN) <= MUT_WEIGHT_SHIFT:
+                    i.weight += random.uniform(-WEIGHT_PERTURBATION, WEIGHT_PERTURBATION)
+                else:
+                    i.weight = random.uniform(-WEIGHT_INITIAL_CAP, WEIGHT_INITIAL_CAP)
+            else:
+                continue
 
     def mutate_add_node(self):
         if len(self.connections) == 0:
@@ -66,7 +77,7 @@ class Genome:
 
         conn.is_enabled = False
         x = (conn.to_node.x + conn.from_node.x) / 2
-        y = ((conn.to_node.y + conn.from_node.y) / 2) * random.uniform(0.6, 1.4)  # Perturb the Y for better drawing
+        y = ((conn.to_node.y + conn.from_node.y) / 2) * random.uniform(0.5, 1.5)  # Perturb the Y for better drawing
 
         node = Node(self.innovation_guardian.register_node(conn.from_node.innovation_number,
                                                            conn.to_node.innovation_number), x, y, ReLU(), "HIDDEN")
