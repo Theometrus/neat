@@ -37,11 +37,10 @@ class Genome:
         # Picks from a choice of mutations according to probabilities specified in settings.py. Does this a given number
         # of times once again based on settings
 
-        mutation_sum = MUT_ADD_NODE + MUT_ADD_LINK + MUT_WEIGHT_ADJUST + MUT_TOGGLE_LINK
-        probabilities = [MUT_ADD_NODE/mutation_sum, MUT_ADD_LINK/mutation_sum, MUT_WEIGHT_ADJUST/mutation_sum,
-                         MUT_TOGGLE_LINK/mutation_sum]
+        values = [MUT_ADD_NODE, MUT_ADD_LINK, MUT_WEIGHT_ADJUST, MUT_TOGGLE_LINK, MUT_REMOVE_LINK, MUT_REMOVE_NODE]
+        probabilities = list(map(lambda x: x/sum(values), values))
 
-        choices = [0, 1, 2, 3]
+        choices = [0, 1, 2, 3, 4, 5]
         num_to_mutate = random.choice(range(1, MUTATIONS_AT_ONCE))
 
         for _ in range(num_to_mutate):
@@ -58,6 +57,55 @@ class Genome:
 
             elif choice == 3:
                 self.mutate_toggle_link()
+
+            elif choice == 4:
+                self.mutate_remove_connection()
+
+            elif choice == 5:
+                self.mutate_remove_node()
+
+    def mutate_remove_node(self):
+        node = None
+        found = False
+
+        for _ in range(100):
+            node = random.choice(self.nodes)
+
+            if IN_NODE_X < node.x < OUT_NODE_X:
+                found = True
+                break
+
+        if not found:
+            return
+
+        for c in node.in_links:
+            c.from_node.out_links.remove(c)
+
+        for c in node.out_links:
+            c.to_node.in_links.remove(c)
+
+        self.nodes.remove(node)
+        self.connections = [x for x in self.connections if x not in node.in_links + node.out_links]
+
+    def mutate_remove_connection(self):
+        conn = None
+        found = False
+
+        if not self.connections:
+            return
+
+        # Disallow removal of connections that would leave nodes disconnected and useless
+        for _ in range(100):
+            conn = random.choice(self.connections)
+            if len(conn.from_node.out_links) > 1 and len(conn.to_node.in_links) > 1:
+                found = True
+                break
+
+        if not found:
+            return
+
+        self.connections.remove(conn)
+        self.connection_dict.pop((conn.from_node.innovation_number, conn.to_node.innovation_number))
 
     def mutate_adjust_weights(self):
         # Iterates through all connections and either perturbs the weight slightly or reassigns it completely
@@ -182,7 +230,7 @@ class Genome:
             conn.is_enabled = not conn.is_enabled
 
     def compare_to(self, genome):
-        # Figures out the distance (delta as specied in the paper) between two genomes. Necessary for speciation
+        # Figures out the distance (delta as specified in the paper) between two genomes. Necessary for speciation
 
         idx_a = 0
         idx_b = 0

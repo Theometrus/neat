@@ -8,6 +8,8 @@ MUTATIONS_AT_ONCE = 4
 MUT_ADD_LINK = 0.18
 MUT_ADD_NODE = 0.01
 MUT_TOGGLE_LINK = 0.01
+MUT_REMOVE_LINK = 0.01
+MUT_REMOVE_NODE = 0.001
 
 MUT_WEIGHT_ADJUST = 0.8  # Controls overall how likely the next two mutation types are to occur per connection
 MUT_WEIGHT_SHIFT = 0.6
