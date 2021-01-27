@@ -45,6 +45,7 @@ def main():
         print("SPECIES SIZES:")
         total = 0.0
         sizes = []
+
         for s in pop.species:
             sizes.append(len(s.members))
 
