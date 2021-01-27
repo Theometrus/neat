@@ -2,12 +2,12 @@ import math
 
 
 class XORFitnessEvaluator:
+    # This class evaluates and keeps track of network fitnesses
+
     def __init__(self):
         self.networks = {}
 
     def calculate(self, network, outs, ins):
-        # 11 10 01 00
-
         ans = outs[network]
 
         ctr = 0

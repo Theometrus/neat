@@ -11,7 +11,7 @@ class Network:
         self.outputs = []
 
     def get_child(self, partner, template):
-        # The function makes assumptions, so the parameters must be given in the right order
+        # This function makes assumptions, so the parameters must be given in the right order
         if self.fitness >= partner.fitness:
             return Network(self.genome.get_child(partner.genome, template))
         else:
@@ -23,7 +23,7 @@ class Network:
             sys.exit()
         input_ctr = 0
 
-        # Since the nodes are sorted by X, we can assume the sensors are all at the start
+        # Since the nodes are sorted by X, we can assume the sensors are all at the start and outputs at the end
         for i in self.genome.nodes:
             if i.node_type == "OUTPUT":
                 self.outputs.append(i.calculate(inputs[input_ctr]))

@@ -2,6 +2,9 @@ class InnovationGuardian:
     """
     Responsible for keeping track of all unique nodes and connections,
     and assigning innovation numbers to them.
+    Note: only keeps a record of innovations made in the current generation. As a result, it is possible for
+    the same innovation to occur in a later generation and get assigned a different innovation number.
+    This is intentional.
     """
 
     def __init__(self):

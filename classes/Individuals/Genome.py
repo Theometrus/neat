@@ -13,7 +13,7 @@ class Genome:
         self.nodes = nodes  # Note: Must be sorted by X value for more efficient computation in the future
         self.connections = []  # Note: Must be sorted by innovation number for faster comparisons
         self.connection_dict = {}  # Used for quickly checking if a given connection already exists in this genome
-        self.innovation_guardian = innovation_guardian
+        self.innovation_guardian = innovation_guardian  # Singleton
 
     def find_enabled_connection(self):
         found = False
@@ -22,7 +22,7 @@ class Genome:
         # Will try to find a connection before timing out
         for i in range(100):
             conn = random.choice(self.connections)
-            if not conn.is_enabled:  # Prevent nodes from being created on disabled links
+            if not conn.is_enabled:
                 continue
 
             found = True
@@ -34,6 +34,9 @@ class Genome:
         return conn
 
     def mutate(self):
+        # Picks from a choice of mutations according to probabilities specified in settings.py. Does this a given number
+        # of times once again based on settings
+
         mutation_sum = MUT_ADD_NODE + MUT_ADD_LINK + MUT_WEIGHT_ADJUST + MUT_TOGGLE_LINK
         probabilities = [MUT_ADD_NODE/mutation_sum, MUT_ADD_LINK/mutation_sum, MUT_WEIGHT_ADJUST/mutation_sum,
                          MUT_TOGGLE_LINK/mutation_sum]
@@ -43,20 +46,22 @@ class Genome:
 
         for _ in range(num_to_mutate):
             choice = np.random.choice(choices, 1, p=probabilities)
+
             if choice == 0:
                 self.mutate_add_node()
+
             elif choice == 1:
                 self.mutate_add_link()
+
             elif choice == 2:
                 self.mutate_adjust_weights()
-                # if random.uniform(0.0, 1.0) <= MUT_WEIGHT_SHIFT:
-                #     self.mutate_weight_shift()
-                # else:
-                #     self.mutate_weight_reassign()
+
             elif choice == 3:
                 self.mutate_toggle_link()
 
     def mutate_adjust_weights(self):
+        # Iterates through all connections and either perturbs the weight slightly or reassigns it completely
+
         for i in self.connections:
             if random.uniform(0.0, 1.0) <= MUT_WEIGHT_SHIFT + MUT_WEIGHT_REASSIGN:
                 if random.uniform(0.0, MUT_WEIGHT_SHIFT + MUT_WEIGHT_REASSIGN) <= MUT_WEIGHT_SHIFT:
@@ -70,13 +75,13 @@ class Genome:
         if len(self.connections) == 0:
             return
 
-        conn = self.find_enabled_connection()
+        conn = self.find_enabled_connection()  # Prevent nodes from being formed on disabled connections
 
         if conn is None:
             return
 
         conn.is_enabled = False
-        x = (conn.to_node.x + conn.from_node.x) / 2
+        x = (conn.to_node.x + conn.from_node.x) / 2  # X coordinate is used for drawing and calculation ordering
         y = ((conn.to_node.y + conn.from_node.y) / 2) * random.uniform(0.5, 1.5)  # Perturb the Y for better drawing
 
         node = Node(self.innovation_guardian.register_node(conn.from_node.innovation_number,
@@ -118,6 +123,8 @@ class Genome:
             node_a = random.choice(self.nodes)
             node_b = random.choice(self.nodes)
 
+            # Do not pick the same node, nodes in the same category (outputs/inputs/biases), or nodes which are already
+            # connected
             if node_a == node_b \
                     or self.connection_dict.get((node_a.innovation_number, node_b.innovation_number)) is not None \
                     or self.connection_dict.get((node_b.innovation_number, node_a.innovation_number)) is not None \
@@ -144,7 +151,9 @@ class Genome:
         node_b.in_links.append(conn)
 
     def insert_connection(self, conn):
-        # Ensures connections are inserted in a sorted order
+        # Ensures connections are inserted in a sorted order (by innovation). This is done to make crossover
+        # faster and simpler down the line
+
         if len(self.connections) == 0:
             self.connections.append(conn)
             self.connection_dict[(conn.from_node.innovation_number, conn.to_node.innovation_number)] = conn
@@ -163,6 +172,7 @@ class Genome:
 
     def mutate_toggle_link(self):
         # Randomly turns a connection on or off
+
         if len(self.connections) == 0:
             return
 
@@ -171,33 +181,19 @@ class Genome:
         if conn is not None:
             conn.is_enabled = not conn.is_enabled
 
-    def mutate_weight_shift(self):
-        # Nudges a connection's weight slightly in a random direction
-        if len(self.connections) == 0:
-            return
-
-        conn = self.find_enabled_connection()
-
-        if conn is not None:
-            conn.weight += random.uniform(-1.0, 1.0)
-
-    def mutate_weight_reassign(self):
-        # Completely randomizes a connection's weight
-        if len(self.connections) == 0:
-            return
-
-        conn = self.find_enabled_connection()
-
-        if conn is not None:
-            conn.weight = random.uniform(-3.0, 3.0)
-
     def compare_to(self, genome):
+        # Figures out the distance (delta as specied in the paper) between two genomes. Necessary for speciation
+
         idx_a = 0
         idx_b = 0
         disjoint = 0
         similar = 0
         weight_diff = 0.0
 
+        '''
+        The idea here is as such: keep a positional tracker for both genomes. During comparison, move through 
+        the genomes in a similar fashion as one would do when performing the merge-sort merge step.  
+        '''
         while idx_a < len(self.connections) and idx_b < len(genome.connections):
             innov_a = self.connections[idx_a].innovation_number
             innov_b = genome.connections[idx_b].innovation_number
@@ -216,18 +212,19 @@ class Genome:
                 disjoint += 1
                 idx_b += 1
 
-        if similar == 0:
+        if similar == 0:  # Edge case protection
             weight_diff = 0
         else:
             weight_diff /= similar
+
         excess = abs(len(self.connections) - len(genome.connections))
         length = max(len(self.connections), len(genome.connections))
 
         if length == 0:
             delta = 0
         else:
-            if length < 20:
-                length = 1
+            length = 1 if length < 20 else length  # Encourage speciation in smaller genotypes
+
             delta = (EXCESS_COEFFICIENT * excess / length) + (
                     DISJOINT_COEFFICIENT * disjoint / length) + WEIGHT_COEFFICIENT * weight_diff
 
@@ -242,13 +239,13 @@ class Genome:
         idx_a = 0
         idx_b = 0
         nodes = template.nodes
-        node_dict = {}
+        node_dict = {}  # Keep track of existing nodes
         connections = []
-        connection_dict = {}
+        connection_dict = {}  # Keep track of existing connections
 
         # Register existing nodes from the template (bias, sensors and output nodes)
-        for i in template.nodes:
-            node_dict[i.innovation_number] = i
+        for n in template.nodes:
+            node_dict[n.innovation_number] = n
 
         while idx_a < len(self.connections) or idx_b < len(partner.connections):
             # B is initially set to infinity to control the flow of the loop down the line
@@ -261,7 +258,7 @@ class Genome:
             else:
                 break
 
-            is_enabled = self.connections[idx_a].is_enabled
+            is_enabled = self.connections[idx_a].is_enabled  # Default to the status of the more fit gene
 
             if idx_b < len(partner.connections):
                 innov_b = partner.connections[idx_b].innovation_number
@@ -274,13 +271,13 @@ class Genome:
                     connection = partner.connections[idx_b]
 
                 # 75% chance for a connection to be disabled if it was disabled in either parent
-                if not self.connections[idx_a].is_enabled or not partner.connections[idx_b].is_enabled:
+                if self.connections[idx_a].is_enabled != partner.connections[idx_b].is_enabled:
                     if random.uniform(0.0, 1.0) <= 0.75:
                         is_enabled = False
                     else:
                         is_enabled = True
-                else:
-                    is_enabled = True
+                elif not self.connections[idx_a].is_enabled:
+                    is_enabled = False
 
                 idx_a += 1
                 idx_b += 1

@@ -18,7 +18,7 @@ class Node:
         if self.node_type == "SENSOR" or self.node_type == "BIAS":
             self.output = self.activation_fn.compute(input_val)
 
-        else:  # hidden, or output node
+        else:  # hidden or output node
             for link in self.in_links:
                 if link.is_enabled:
                     self.output += link.weight * link.from_node.output
