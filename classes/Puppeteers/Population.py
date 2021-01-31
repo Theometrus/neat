@@ -108,14 +108,15 @@ class Population:
             elif s.stagnation_timer == 0:
                 s.new_size = 0
                 continue
-            s.new_size = round(s.average_fitness / mean_fitness)
+            # s.new_size = round(s.average_fitness / mean_fitness)
+            s.new_size = math.floor(s.average_fitness / mean_fitness)
 
     def cull(self):
         # Exterminate the lowest performing members of most species (without causing extinctions)
 
         for s in self.species:
             s.members.sort(key=lambda x: x.fitness)
-            cutoff = math.floor((1 - SURVIVORS) * len(s.members))
+            cutoff = round((1 - SURVIVORS) * len(s.members))
 
             if len(s.members) - cutoff < 2:  # Don't eradicate small species
                 continue
@@ -130,10 +131,11 @@ class Population:
         for s in self.species:
             offspring = [s.representative]
             self.networks.append(s.representative)
-            elite_num = math.ceil(ELITES * len(s.members))
+            elite_num = round(ELITES * len(s.members))
+            elite_cutoff = len(s.members) - elite_num
 
             # Transfer some percentage of the population to the next generation unaltered (elitism)
-            for i in s.members[elite_num:]:
+            for i in s.members[elite_cutoff:]:
                 elite_clone = i.get_child(i, self.create_empty_genome())  # Mating a genome with itself clones it
                 offspring.append(elite_clone)
                 self.networks.append(elite_clone)

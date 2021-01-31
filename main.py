@@ -43,6 +43,7 @@ def main():
         print("GENERATION " + str(gen))
         print()
         print("SPECIES SIZES:")
+        print("POPULATION SIZE: {}".format(len(pop.networks)))
         total = 0.0
         sizes = []
 
