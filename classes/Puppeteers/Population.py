@@ -75,20 +75,19 @@ class Population:
             s.representative = random.choice(s.members)
 
     def erase_extinct_species(self):
-        # Prevent empty species lists from cluttering the program
+        # Prevent empty/1-member species lists from cluttering the program
 
         orphans = []
 
         for s in self.species:
             if len(s.members) == 1:
                 orphans.append(s.members[0])
+                rand_species = random.choice([x for x in self.species if x != s and len(x.members) > 0])
+                rand_species.members.append(s.members[0])
+                s.members[0].species = rand_species
+                s.members = []
 
         self.species = [x for x in self.species if len(x.members) > 1]
-
-        for o in orphans:  # Reassign lone members to random species
-            rand_species = random.choice(self.species)
-            rand_species.members.append(o)
-            o.species = rand_species
 
     def calculate_fitnesses(self):
         # Calculate the mean adjusted fitnesses based on the specifications described in the original NEAT paper
